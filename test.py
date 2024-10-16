@@ -1,6 +1,6 @@
 import time
 import fluidsynth
-
+"""
 soundfile_path = "/resources/soundfiles/[GD] Clean Grand Mistral.sf2"
 midi_path = "C:\\Users\\fabia\\PycharmProjects\\MidiConnection\\resources\\midi\\resources\\midi\\new_song.mid"
 output_path = "C:\\Users\\fabia\\PycharmProjects\\MidiConnection\\resources\\wav\\new_song.wav"
@@ -49,3 +49,5 @@ fluidsynth.delete_fluid_file_renderer(renderer)
 fluidsynth.delete_fluid_player(player)
 fluidsynth.delete_fluid_synth(selfsynth)
 fluidsynth.delete_fluid_settings(settings)
+
+"""
