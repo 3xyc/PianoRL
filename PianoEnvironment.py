@@ -1,58 +1,79 @@
 import numpy as np
 import gymnasium as gym
 
+
 class PianoEnv(gym.Env):
-    def __init__(self, size: int = 24):
+    def __init__(self, number_of_keys: int = 1, max_velocity: int = 120):
         super().__init__()
-        self.size = size
-        self._agent_state = np.zeros(size)
-        self._target_state = np.zeros(size)
+        self.number_of_keys = number_of_keys
+        self.max_velocity = max_velocity
+        self._agent_state = np.zeros(number_of_keys, dtype=np.int64)
+        self._target_state = np.zeros(number_of_keys, dtype=np.int64)
 
-        # define action space as the 88 Keys of the Piano
-        self.action_space = gym.spaces.Discrete(size)
+        # Define the action space as changes in notes, where each value represents a change in the note
+        self.action_space = gym.spaces.MultiDiscrete([number_of_keys, 2])
 
-        # define Observation space,
-        # for now as notes played by the piano, and the notes seen from the original piece
-        self.observation_space = gym.spaces.Dict({
-            "agent": gym.spaces.Box(low=0, high=1, shape=(size,), dtype=np.float32),
-            "target": gym.spaces.Box(low=0, high=1, shape=(size,), dtype=np.float32),
-        })
-
+        # Define observation space: agent's current state (MIDI notes between 0 and 127)
+        self.observation_space = gym.spaces.Box(low=0, high=max_velocity, shape=(2, number_of_keys), dtype=np.int64)
 
     def _get_obs(self):
-        return {"agent": self._agent_state, "target": self._target_state}
+        obs = np.vstack((self._agent_state, self._target_state))
+        print(obs.shape)
+        return obs
 
     def _get_info(self):
-        # manhatten distanz der Vektoren, representiert distanz / Ähnlichkeit beider lösungen
         return {
             "distance": np.linalg.norm(
-                self._agent_location - self._target_location, ord=1
+                self._agent_state - self._target_state, ord=1
             )
         }
 
-    def reset(self):#
-        self._agent_state = np.zeros(self.size)
-        self._target_state = np.zeros(self.size)
-        # Reset the environment state
-        return self._get_obs(), self._get_info() # Initial observation, info
+    def reset(self, seed=None, options=None):
+        # We need the following line to seed self.np_random
+        super().reset(seed=seed)
+
+        # Reset agent state to zeros, target state is set to random MIDI note values between 0 and 127
+        self._agent_state = np.zeros(self.number_of_keys, dtype=np.int64)
+        self._target_state = self.np_random.integers(0, self.max_velocity, size=self.number_of_keys, dtype=np.int64)
+        print("agent_state", self._agent_state)
+        print("target_state", self._target_state)
+
+        # Return observation and info
+        observation = self._get_obs()
+        info = self._get_info()
+        return observation, info
 
     def step(self, action):
-        # set note defined by action to 1
-        self._agent_state[action] = 1
+        old_distance = self._get_info()["distance"]
+        # Apply the action (which represents changes in MIDI notes) to the current agent state
+        step = 0
+        if action[1] == 0 and self._agent_state[action[0]] < self.max_velocity:
+            step = 1
+        elif action[1] == 1 and self._agent_state[action[0]] > -self.max_velocity:
+            step = -1
+        print(action)
+        print("performing, step:", self._agent_state[action[0]], step)
+        self._agent_state[action[0]] += step
 
-        # Completed only if the agent plays the same notes as the target
-        # TODO adjust to some form of similarity calculation between both
-        terminated = np.array(self._agent_state, self._target_state) == 0
-        reward = 1 if terminated else 0
+        new_distance = self._get_info()["distance"]
+        # Check if the agent has matched the target state
+        terminated = new_distance == 0
+        print(new_distance)
+        reward = 1 if new_distance == 0 else 0
+        reward = -10 if step == 0 else old_distance - new_distance
+        # reward = -self._get_info()["distance"]/self._get_info()["distance"]
+        print("reward", reward)
 
-
-        # TODO understand what truncate does
+        # Truncated condition: not used for now
         truncated = False
 
+        # Get the updated observation and info
         observation = self._get_obs()
         info = self._get_info()
 
         return observation, reward, terminated, truncated, info
 
+
+# Register the environment with Gym
 gym.register(id="gymnasium_env/PianoEnv-v0",
-                 entry_point=PianoEnv)
+             entry_point=PianoEnv)
