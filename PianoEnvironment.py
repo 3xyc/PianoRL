@@ -3,7 +3,7 @@ import gymnasium as gym
 
 
 class PianoEnv(gym.Env):
-    def __init__(self, number_of_keys: int = 1, max_velocity: int = 120):
+    def __init__(self, number_of_keys: int = 1, max_velocity: int = 120, path_to_piece = ):
         super().__init__()
         self.number_of_keys = number_of_keys
         self.max_velocity = max_velocity
