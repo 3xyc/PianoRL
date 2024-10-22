@@ -59,6 +59,27 @@ class PianoEnv(gym.Env):
         info = self._get_info()
         return observation, info
 
+    def to_wav(self, piece):
+        wav = self.agent_daw.export(piece, mode='wav', action='get', show_msg=True)
+        raw_data = wav.raw_data
+        # Convert the raw data to integers (16-bit PCM)
+        # 'h' format is used for signed 16-bit (2 bytes)
+        num_samples = len(raw_data) // 2  # Each sample is 2 bytes (16-bit PCM)
+        audio_samples = struct.unpack('<' + 'h' * num_samples, raw_data)  # Little-endian format
+
+        # Convert to numpy array for easier manipulation
+        audio_samples_np = np.array(audio_samples, dtype=np.float32)
+        return audio_samples_np
+    def to_midi_stream(self, piece):
+        midi_stream = musicpy.musicpy.write(piece,
+                                            bpm=120,
+                                            channel=0,
+                                            start_time=None,
+                                            save_as_file=False)
+        print(midi_stream.getvalue())
+        piece_from_midi_stream = musicpy.musicpy.read(midi_stream, is_file=True)
+        return midi_stream
+
     def step(self, action):
         old_distance = self._get_info()["distance"]
         # Apply the action (which represents changes in MIDI notes) to the current agent state
@@ -99,12 +120,6 @@ if __name__ == "__main__":
     env = gym.make("gymnasium_env/PianoEnv-v0", audio_file='resources/wav/c_eb_c_eb_c_eb_c.wav', sound_file='resources/soundfiles/[GD] Clean Grand Mistral.sf2', sample_rate=44100, number_of_keys=1)
     print(env)
 
-    loader = sf.sf2_loader(r'resources/soundfiles/[GD] Clean Grand Mistral.sf2')
-
-    instruments = loader.all_instruments()
-    print(instruments)
-    print(dir(loader))
-
     new_song = daw(1, name='piano song')
     new_song.load(0, r'resources/soundfiles/[GD] Clean Grand Mistral.sf2')
     # export piece object to wav
@@ -114,7 +129,6 @@ if __name__ == "__main__":
           bpm=120,
           channel=0,
           start_time=None,
-          name='temp.mid',
           save_as_file=False)
     print(midi_stream.getvalue())
 
