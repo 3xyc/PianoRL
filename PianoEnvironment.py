@@ -1,16 +1,16 @@
-import struct
-
+import fluidsynth
 import librosa
-import musicpy.musicpy
+import numpy
 import numpy as np
 import gymnasium as gym
+import pyaudio
+from fluidsynth import Synth
 from matplotlib import pyplot as plt
-from musicpy.daw import daw
-from musicpy.structures import chord, note
+from mido import MidiFile, MidiTrack, Message
 
 
 class PianoEnv(gym.Env):
-    def __init__(self, audio_file, sound_file, sample_rate=44100, number_of_keys: int = 1, max_velocity: int = 120):
+    def __init__(self, audio_file, sound_file, sample_rate=44100, hop_length=512,  number_of_keys: int = 1, max_velocity: int = 120):
         super().__init__()
         self.number_of_keys = number_of_keys
         self.max_velocity = max_velocity
@@ -24,12 +24,25 @@ class PianoEnv(gym.Env):
         self.observation_space = gym.spaces.Box(low=0, high=max_velocity, shape=(2, number_of_keys), dtype=np.int64)
 
         self.sample_rate = sample_rate
-        self.wav_data, _ = librosa.load(audio_file, sr=self.sample_rate)
-        self.cqt_data = librosa.cqt(self.wav_data, sr=self.sample_rate)
-        self.agent_daw = daw(1, name='piano song')
+        self.hop_length = hop_length
+        self.wav_data, sr = librosa.load(audio_file, sr=self.sample_rate)
+        self.cqt_data = librosa.cqt(self.wav_data, hop_length=hop_length, sr=self.sample_rate)
+
         print(self.wav_data.shape)
         print(self.cqt_data.shape)
+        librosa.display.specshow(librosa.amplitude_to_db(np.abs(self.cqt_data), ref=np.max),
+                                 sr=sr, x_axis='time', y_axis='cqt_note')
+        plt.colorbar(format='%+2.0f dB')
+        plt.title('Constant-Q power spectrum')
+        plt.show()
 
+        mid = MidiFile()
+        track = MidiTrack()
+        mid.tracks.append(track)
+        track.append(Message('note_on', note=60, velocity=64))
+        track.append(Message('note_off', note=60, velocity=64, time=1000))
+
+        mid.save('new_song.mid')
 
     def _get_obs(self):
         obs = np.vstack((self._agent_state, self._target_state))
@@ -98,40 +111,5 @@ if __name__ == "__main__":
     env = gym.make("gymnasium_env/PianoEnv-v0", audio_file='resources/wav/c_eb_c_eb_c_eb_c.wav', sound_file='resources/soundfiles/[GD] Clean Grand Mistral.sf2', sample_rate=44100, number_of_keys=1)
     print(env)
 
-    new_song = daw(1, name='piano song')
-    new_song.load(0, r'resources/soundfiles/[GD] Clean Grand Mistral.sf2')
-    # export piece object to wav
-    wav = new_song.export(note('C', 5), mode='wav', action='get', show_msg=True)
-    # export piece object to midi stream
-    midi_stream = musicpy.musicpy.write(note('C', 5),
-          bpm=120,
-          channel=0,
-          start_time=None,
-          save_as_file=False)
-    print(midi_stream.getvalue())
+    mid = MidiFile(r"new_song.mid")
 
-    midi_object = musicpy.musicpy.read(midi_stream, is_file=True)
-    print(midi_object)
-    print(wav)
-    print(wav[0:1000])
-    raw_data = wav.raw_data
-    # Convert the raw data to integers (16-bit PCM)
-    # 'h' format is used for signed 16-bit (2 bytes)
-    num_samples = len(raw_data) // 2  # Each sample is 2 bytes (16-bit PCM)
-    audio_samples = struct.unpack('<' + 'h' * num_samples, raw_data)  # Little-endian format
-
-    # Convert to numpy array for easier manipulation
-    audio_samples_np = np.array(audio_samples, dtype=np.float32)
-
-    # Apply librosa's CQT or other processing directly (assuming 44100Hz sample rate)
-    sr = 44100  # Sample rate (you should adjust this based on your audio file)
-    cqt = librosa.cqt(audio_samples_np, sr=sr)
-    print(cqt)
-    # Display the CQT spectrogram
-    librosa.display.specshow(librosa.amplitude_to_db(np.abs(cqt), ref=np.max),
-                             sr=sr, x_axis='time', y_axis='cqt_note')
-    plt.colorbar(format='%+2.0f dB')
-    plt.title('Constant-Q power spectrum')
-    plt.show()
-    print(audio_samples_np)
-    print(wav)
