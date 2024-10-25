@@ -63,12 +63,27 @@ def fast_fluidsynth(m, sr=44100):
     print(audio)
     return audio
 
+def pretty_midi_to_cqt_and_plot(mid, sample_rate=44100, hop_length=512):
+    wav_data = mid.fluidsynth(sample_rate, sf2_path="resources/soundfiles/[GD] Clean Grand Mistral.sf2")
+    cqt_data = librosa.cqt(wav_data, hop_length=hop_length, sr=sample_rate)
+
+    librosa.display.specshow(librosa.power_to_db(np.abs(cqt_data), ref=np.max),
+                             sr=sample_rate, x_axis='time', y_axis='cqt_note')
+    plt.colorbar(format='%+2.0f dB')
+    plt.title('Constant-Q power spectrum')
+    plt.show()
+
+
 
 if __name__ == '__main__':
     midi = mido.MidiFile("new_song.mid")
     #wav = fast_fluidsynth(midi)
 
     p_m = pretty_midi.PrettyMIDI("new_song.mid")
+    print(p_m.get_pitch_class_histogram())
+    p_m = pretty_midi.PrettyMIDI("piano.mid")
+    print(p_m.get_pitch_class_histogram())
+    exit()
     sr = 44100
     wav_data = p_m.fluidsynth(sr, "resources/soundfiles/[GD] Clean Grand Mistral.sf2")
 
