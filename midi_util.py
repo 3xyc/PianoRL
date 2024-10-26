@@ -12,6 +12,8 @@ import pretty_midi
 from matplotlib import pyplot as plt
 
 
+
+
 def play_mido(midi):
     output_names = mido.get_output_names()
     with mido.open_output(output_names[0]) as port:
@@ -22,6 +24,49 @@ def play_mido(midi):
             time.sleep(message.time)
             port.send(message)
 
+
+def synthesize(synth, notes, channel=0, sample_rate=44100, plot=False):
+    event_list = []
+    for note in notes:
+        event_list += [[note.start, 'note on', note.pitch, note.velocity]]
+        event_list += [[note.end, 'note off', note.pitch]]
+    # Sort the event list by time, and secondarily by whether the event
+    # is a note off
+    event_list.sort(key=lambda x: (x[0], x[1] != 'note off'))
+    # Add some silence at the beginning according to the time of the first
+    # event
+    current_time = event_list[0][0]
+    # Convert absolute seconds to relative samples
+    next_event_times = [e[0] for e in event_list[1:]]
+    for event, end in zip(event_list[:-1], next_event_times):
+        event[0] = end - event[0]
+    # Set silence duration at the end to zero
+    event_list[-1][0] = 0.
+
+    # Pre-allocate output array
+    total_time = current_time + np.sum([e[0] for e in event_list])
+    synthesized = np.zeros(int(np.ceil(sample_rate * total_time)))
+    # Iterate over all events
+    for event in event_list:
+        # Process events based on type
+        if event[1] == 'note on':
+            synth.noteon(channel, event[2], event[3])
+        elif event[1] == 'note off':
+            synth.noteoff(channel, event[2])
+        elif event[1] == 'pitch bend':
+            synth.pitch_bend(channel, event[2])
+        elif event[1] == 'control change':
+            synth.cc(channel, event[2], event[3])
+        # Add in these samples
+        current_sample = int(sample_rate * current_time)
+        end = int(sample_rate * (current_time + event[0]))
+        samples = synth.get_samples(end - current_sample)[::2]
+        synthesized[current_sample:end] += samples
+        # Increment the current sample
+        current_time += event[0]
+    # TODO Normalize or not ?
+    #synthesized /= np.abs(synthesized).max()
+    return synthesized
 
 
 def fast_fluidsynth(m, sr=44100):
