@@ -5,7 +5,6 @@ from collections import defaultdict
 
 from stable_baselines3.common.env_util import make_vec_env
 from tqdm import tqdm
-
 import PianoEnvironment
 
 
