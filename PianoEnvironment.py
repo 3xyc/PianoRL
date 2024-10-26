@@ -52,13 +52,13 @@ class PianoEnv(gym.Env):
         agent_instrument.notes.append(note)
         wav_data = self.synthesize([note, pretty_midi.Note(60, 66, 4, 5)])
         # wav_data = agent_instrument.fluidsynth(sample_rate, sound_file)
-        cqt_data = librosa.cqt(wav_data, hop_length=hop_length, sr=sample_rate)
+        #cqt_data = librosa.cqt(wav_data, hop_length=hop_length, sr=sample_rate)
         print("here")
-        librosa.display.specshow(librosa.power_to_db(np.abs(cqt_data), ref=np.max),
-                                 sr=sample_rate, x_axis='time', y_axis='cqt_note')
-        plt.colorbar(format='%+2.0f dB')
-        plt.title('Constant-Q power spectrum')
-        plt.show()
+        #librosa.display.specshow(librosa.power_to_db(np.abs(cqt_data), ref=np.max),
+        #                         sr=sample_rate, x_axis='time', y_axis='cqt_note')
+       # plt.colorbar(format='%+2.0f dB')
+        #plt.title('Constant-Q power spectrum')
+       # plt.show()
 
     def _get_obs(self):
         obs = np.vstack((self._agent_state, self._target_state))
@@ -73,6 +73,7 @@ class PianoEnv(gym.Env):
         }
 
     def synthesize(self, notes, channel=0):
+        print("here")
         event_list = []
         for note in notes:
             event_list += [[note.start, 'note on', note.pitch, note.velocity]]
@@ -92,7 +93,7 @@ class PianoEnv(gym.Env):
 
         # Pre-allocate output array
         total_time = current_time + np.sum([e[0] for e in event_list])
-
+        print(1)
         synthesized = np.zeros(int(np.ceil(self.sample_rate * total_time)))
         # Iterate over all events
         for event in event_list:
@@ -112,6 +113,7 @@ class PianoEnv(gym.Env):
             synthesized[current_sample:end] += samples
             # Increment the current sample
             current_time += event[0]
+            print(2)
         # Close fluidsynth
         self.fluidsynth.delete()
 
