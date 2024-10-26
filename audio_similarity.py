@@ -3,7 +3,7 @@ import numpy as np
 import fluidsynth
 from matplotlib import pyplot as plt
 from pretty_midi import pretty_midi
-from midi_util import synthesize
+from midi_util import synthesize_fluidsynth
 from skimage.metrics import structural_similarity as ssim
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     notes_1 = [n1]
     notes_2 = [n2]
     print("s")
-    wav_0 = synthesize(synth, notes_0)
+    wav_0 = synthesize_fluidsynth(synth, notes_0)
     cqt_data = librosa.cqt(wav_0)
 
     librosa.display.specshow(librosa.power_to_db(np.abs(cqt_data), ref=np.max),
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     plt.title('Constant-Q power spectrum')
     plt.show()
 
-    wav_1 = synthesize(synth, notes_1)
+    wav_1 = synthesize_fluidsynth(synth, notes_1)
     cqt_data = librosa.cqt(wav_1)
 
     librosa.display.specshow(librosa.power_to_db(np.abs(cqt_data), ref=np.max),
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     plt.title('Constant-Q power spectrum')
     plt.show()
 
-    wav_2 = synthesize(synth, notes_2)
+    wav_2 = synthesize_fluidsynth(synth, notes_2)
     cqt_data = librosa.cqt(wav_2)
 
     librosa.display.specshow(librosa.power_to_db(np.abs(cqt_data), ref=np.max),

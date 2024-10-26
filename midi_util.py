@@ -25,7 +25,7 @@ def play_mido(midi):
             port.send(message)
 
 
-def synthesize(synth, notes, channel=0, sample_rate=44100, plot=False):
+def synthesize_fluidsynth(synth, notes, channel=0, sample_rate=44100, plot=False):
     event_list = []
     for note in notes:
         event_list += [[note.start, 'note on', note.pitch, note.velocity]]
@@ -66,6 +66,17 @@ def synthesize(synth, notes, channel=0, sample_rate=44100, plot=False):
         current_time += event[0]
     # TODO Normalize or not ?
     #synthesized /= np.abs(synthesized).max()
+
+    if plot:
+        librosa.display.waveshow(wav_data, sample_rate=sample_rate)
+        plt.show()
+        cqt_data = librosa.cqt(wav_data, hop_length=512, sr=sample_rate)
+        librosa.display.specshow(librosa.power_to_db(np.abs(cqt_data), ref=np.max),
+                                 sr=sample_rate, x_axis='time', y_axis='cqt_note')
+        plt.colorbar(format='%+2.0f dB')
+        plt.title('Constant-Q power spectrum')
+        plt.show()
+
     return synthesized
 
 
