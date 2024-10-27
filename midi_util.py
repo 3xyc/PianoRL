@@ -25,7 +25,7 @@ def play_mido(midi):
             port.send(message)
 
 
-def synthesize_fluidsynth(synth, notes, channel=0, sample_rate=44100, plot=False):
+def synthesize_fluidsynth(synth, notes, channel=0, sample_rate=44100, plot=False, normalize=True):
     event_list = []
     for note in notes:
         event_list += [[note.start, 'note on', note.pitch, note.velocity]]
@@ -64,8 +64,9 @@ def synthesize_fluidsynth(synth, notes, channel=0, sample_rate=44100, plot=False
         synthesized[current_sample:end] += samples
         # Increment the current sample
         current_time += event[0]
-    # TODO Normalize or not ?
-    #synthesized /= np.abs(synthesized).max()
+
+    if normalize:
+        synthesized /= np.abs(synthesized).max()
 
     if plot:
         librosa.display.waveshow(wav_data, sample_rate=sample_rate)
