@@ -77,7 +77,7 @@ class PianoAgent(gym.Env):
 
 
 if __name__ == '__main__':
-    env = gym.make("gymnasium_env/PianoEnv-v0")
+    env = gym.make("gymnasium_env/MLPPianoEnv-v0")
 
     learning_rate = 0.01
     n_episodes = 100_000

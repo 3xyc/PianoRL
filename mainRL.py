@@ -28,7 +28,7 @@ def playout_policy(model, env):
 
 
 if __name__ == '__main__':
-    env = gym.make("gymnasium_env/PianoEnv-v0", audio_file='resources/wav/c_eb_c_eb_c_eb_c.wav',
+    env = gym.make("gymnasium_env/MLPPianoEnv-v0", audio_file='resources/wav/c_eb_c_eb_c_eb_c.wav',
                    sound_file='resources/soundfiles/[GD] Clean Grand Mistral.sf2', sample_rate=44100, number_of_keys=20)
     print(env)
     # Box(4,) means that it is a Vector with 4 components
@@ -54,7 +54,8 @@ if __name__ == '__main__':
     tmp_path = "./logs"
     new_logger = configure(tmp_path, ["stdout", "csv", "tensorboard"])
     # Initialize the PPO agent with a Multi-Layer Perceptron (MLP) policy
-    model = PPO("MlpPolicy", env, verbose=1, tensorboard_log="./")
+    #model = PPO("MlpPolicy", env, verbose=1, tensorboard_log="./")
+    model = PPO.load("20NotePolicy_10000it", env, verbose=1, tensorboard_log="./")
     model.set_logger(new_logger)
     # Train the agent for a specified number of timesteps
     model.learn(total_timesteps=10000, tb_log_name="first_run")
@@ -70,4 +71,4 @@ if __name__ == '__main__':
 
 
     env.close()
-    model.save("MlpPolicy")
+    model.save("20NotePolicy_10000it")
